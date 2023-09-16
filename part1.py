@@ -7,11 +7,12 @@ import seaborn as sns
 config = {
   'dataset': './dataset/winequality-white.csv',
   'train-fraction': 0.8, 
-  'epochs': 110,
+  'epochs': 1000,
   'lr': 0.002,
   'logging': True,
   'correlation-threshold': 0.8,
   'actual-value': 'quality',
+  'convergence-threshold': 0.001,
 }
 
 
@@ -155,16 +156,21 @@ class LinearRegression:
     train_trans = np.array(self.train_x).reshape(self.features_len, self.train_x.shape[0])
     for epoch in range(epochs):
       pred_output = self.train_x.dot(self.weights)
-      self.weights = self.weights - (lr/self.train_x.shape[0])*(train_trans.dot(pred_output - self.train_Y))
-      error = self.MSE(self.train_Y, pred_output)
-      testLoss = self.testLoss()
-      self.log.append({
-        'epoch': epoch,
-        'trainingLoss': float(error.iloc[0]),
-        'testLoss': float(testLoss.iloc[0]),
-        'lr': lr,
-        'epochs': epochs
-      })
+      difference = (lr/self.train_x.shape[0])*(train_trans.dot(pred_output - self.train_Y))
+      if np.max(np.abs(difference)) > config['convergence-threshold']:
+        self.weights = self.weights - difference
+        error = self.MSE(self.train_Y, pred_output)
+        testLoss = self.testLoss()
+        self.log.append({
+          'epoch': epoch,
+          'trainingLoss': float(error.iloc[0]),
+          'testLoss': float(testLoss.iloc[0]),
+          'lr': lr,
+          'epochs': epochs
+        })
+      else:
+        print('convergence threshold value reached. stopping the training.\n')
+        break
 
   def predict(self, features):
     return features.dot(self.weights)
