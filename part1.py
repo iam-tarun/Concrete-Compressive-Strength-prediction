@@ -13,7 +13,7 @@ config = {
   'dataset': 'https://drive.google.com/uc?id=1kCozLy5zNmPkeC6E47cQziPpjWpm5XZL',
   'train-fraction': 0.8, 
   'epochs': 2000,
-  'lr': 0.1,
+  'lr': 0.05,
   'logging': False,
   'correlation-threshold': 0.80,
   'actual-value': 'Concrete-compressive-strength',
@@ -149,6 +149,13 @@ class LinearRegression:
   method to preprocess the data
   """
   def preprocess_data(self, correlation_threshold):
+    # checking for null values
+    if self.data.isnull().sum().sum():
+      print('Null values are present')
+      self.data.dropna()
+    else:
+      print('No null values are present')
+
     # filtering duplicate rows
     self.filter_duplicates()
 
@@ -222,7 +229,7 @@ class LinearRegression:
     fields = ['epoch', 'trainingLoss', 'testLoss', 'epochs', 'lr', 'training_r2', 'testing_r2', 'training_rmse', 'testing_rmse']
     fields = fields + ['W'+str(i) for i in range(self.features_len)]
     logFile = open('part1-logfile.csv', 'a')
-    logFile.truncate(0)
+    # logFile.truncate(0)
     writer = csv.DictWriter(logFile, fieldnames=fields)
     writer.writeheader()
     writer.writerows(self.log)
@@ -283,6 +290,17 @@ class LinearRegression:
   
   """
   method to predict the concrete-compressive-strength using trained model
+  format of features
+  {
+#   'Cement': 540.0,
+#   'Blast Furnace Slag': 0.0,
+#   'Fly Ash': 0.0,
+#   'Water': 162.0,
+#   'Superplasticizer': 2.5,
+#   'Coarse Aggregate': 1040.0,
+#   'Fine Aggregate': 676.0,
+#   'Age': 28
+# }
   """
   def predict(self, features):
     input = [1]
@@ -344,5 +362,20 @@ class LinearRegression:
       plt.title(f'W{i} vs epoch')
       plt.show()
 
+# change the values of hyper params in the config dictionary to test
 model = LinearRegression(config['dataset'], config['actual-value'])
 model.fit(config['train-fraction'], config['epochs'], config['lr'], config['correlation-threshold'],config['convergence-threshold'], config['logging'], config['display-plots'], config['plotFilePath'])
+
+# example on how to use the model to predict for one feature vector
+
+# prediction = model.predict({
+#   'Cement': 540.0,
+#   'Blast Furnace Slag': 0.0,
+#   'Fly Ash': 0.0,
+#   'Water': 162.0,
+#   'Superplasticizer': 2.5,
+#   'Coarse Aggregate': 1040.0,
+#   'Fine Aggregate': 676.0,
+#   'Age': 28
+# })
+# print(prediction)
